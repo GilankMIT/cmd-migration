@@ -12,23 +12,23 @@ development:
 ```
 **important** : For MySQL, add `multiStatements=true` to support multi-statement SQL Execution
 
-Navigate to folder `cmd/cli` and
+Navigate to folder `cmd/cli/migrate` and
 run the following command to build migrate.go :
 
 ```sh
-$ go build migrate/migrate.go
+$ go build migrate.go
 ```
 
 After compiling the CLI files, Run the following command in root folder
 
 **Windows**
 ```sh
-> ./cmd/cli/migrate.exe --up
+> ./cmd/cli/migrate/migrate.exe --up
 ```
 
 **Linux/Mac**
 ```sh
-$ ./cmd/cli/migrate --up
+$ ./cmd/cli/migrate/migrate --up
 ```
 
 
@@ -48,5 +48,29 @@ Command:
 | up| execute database migration to latest version|
 | down| execute down migration|
 | version| see current migration version|
+| create| Create new migration file|
+
+
+Options to create new migration file
+
+| flag | description |
+| ------ | ------ | 
+| migration-dir| directory of the migration directory|
+| filename| filename of the migration file|
+
+example of creating new migration file
+
+
+**Windows**
+
+```sh
+> ./cmd/cli/migrate/migrate.exe --create --migration-dir db/migrations --filename add_user_table
+```
+
+**Linux/Mac**
+
+```sh
+$ ./cmd/cli/migrate/migrate --create --migration-dir db/migrations --filename add_user_table
+```
 
 <br>
