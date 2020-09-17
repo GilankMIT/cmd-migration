@@ -1,11 +1,5 @@
 package main
 
-/*
-TODO:
-- Create Postgre implementation
-- Create migration file generator
-*/
-
 import (
 	"database/sql"
 	"errors"
@@ -18,7 +12,15 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"strconv"
+	"time"
 )
+
+/*
+TODO:
+- Create Postgre implementation
+- Create migration file generator
+*/
 
 type MigrationConfig struct {
 	//DBConfigPath is the .yml filepath for the database configuration
@@ -48,7 +50,25 @@ func main() {
 	downMigration := flag.Bool("down", false, "Down migration flag")
 	versionMigration := flag.Bool("version", false, "Version of migration flag")
 
+	newMigrationFile := flag.Bool("create", false, "Create new migration file")
+	newMigrationFileName := flag.String("filename", "", "New migration file name")
 	flag.Parse()
+
+	if *newMigrationFile {
+		if *newMigrationFileName == "" {
+			fmt.Println("please specify migration file name with --filename")
+			showHelp()
+			return
+		}
+
+		//create new migration file
+		err := createNewMigrationFile(*migrationDir, *newMigrationFileName)
+		if err != nil {
+			fmt.Println("failed to create migration file " + err.Error())
+		}
+
+		return
+	}
 
 	//check if at least up or down flag is specified
 	if !(*upMigration || *downMigration || *versionMigration) {
@@ -172,6 +192,41 @@ func migrateUp(config *MigrationConfig) error {
 	return nil
 }
 
+//createNewMigrationFile will create new migration file to the specified page
+func createNewMigrationFile(filePath, fileName string) error {
+
+	//get current time
+	currentTime := time.Now()
+
+	currentYear := currentTime.Year()
+	currentMonth := fmt.Sprintf("%02d", int(currentTime.Month()))
+	currentDay := fmt.Sprintf("%02d", currentTime.Day())
+
+	currentHour := fmt.Sprintf("%02d", currentTime.Hour())
+	currentMinute := fmt.Sprintf("%02d", currentTime.Minute())
+	currentSec := fmt.Sprintf("%02d", currentTime.Second())
+
+	currentTimeFilePrefix := strconv.Itoa(currentYear) + currentMonth + currentDay +
+		currentHour + currentMinute + currentSec
+
+	fmt.Println(currentHour + currentMinute + currentSec)
+	migrationUpFullPath := filePath + "/" +
+		currentTimeFilePrefix + "_" + fileName + ".up.sql"
+	err := ioutil.WriteFile(migrationUpFullPath, []byte(""), 0644)
+	if err != nil {
+		return err
+	}
+
+	migrationDownFullPath := filePath + "/" +
+		currentTimeFilePrefix + "_" + fileName + ".down.sql"
+	err = ioutil.WriteFile(migrationDownFullPath, []byte(""), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //migrate down will migrate the database to -1 of the version
 func migrateDown(config *MigrationConfig) error {
 	fmt.Println("Migrating down database ...")
@@ -229,6 +284,7 @@ func printMigrationVersion(config *MigrationConfig) error {
 
 	return nil
 }
+
 func showHelp() {
 	helpMessage := `
 Database migration tool. Version 1.0
@@ -246,7 +302,15 @@ Command :
 --up 		Up migration
 --down		Down migration
 --version   see migrations version
-`
 
+
+Creating migration file : 
+
+--create --migration-dir [YOUR MIGRATION DIR] --filename [YOUR MIGRATION NAME]
+
+--migration-dir 			Path of file (default: db/migrations)
+--filename				Name of migration file  
+
+`
 	fmt.Print(helpMessage)
 }
